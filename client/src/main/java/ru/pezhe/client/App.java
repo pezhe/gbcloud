@@ -11,7 +11,7 @@ public class App extends Application {
     public void start(Stage primaryStage) throws Exception{
         Parent root = FXMLLoader.load(getClass().getResource("main.fxml"));
         primaryStage.setTitle("GB Cloud");
-        primaryStage.setScene(new Scene(root, 1280, 600));
+        primaryStage.setScene(new Scene(root, 750, 600));
         primaryStage.show();
     }
 

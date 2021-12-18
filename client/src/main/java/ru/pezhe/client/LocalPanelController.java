@@ -15,11 +15,10 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-public class PanelController implements Initializable {
+public class LocalPanelController implements Initializable {
     @FXML
     TableView<FileInfo> filesTable;
 
@@ -33,13 +32,15 @@ public class PanelController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         TableColumn<FileInfo, String> fileTypeColumn = new TableColumn<>();
         fileTypeColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getType().getName()));
-        fileTypeColumn.setPrefWidth(24);
+        fileTypeColumn.setVisible(false);
 
-        TableColumn<FileInfo, String> filenameColumn = new TableColumn<>("Имя");
-        filenameColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getFilename()));
+        TableColumn<FileInfo, String> filenameColumn = new TableColumn<>("Name");
+        filenameColumn.setSortable(false);
+        filenameColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getType() == FileInfo.FileType.DIRECTORY ? "[" + param.getValue().getFilename() + "]" : param.getValue().getFilename()));
         filenameColumn.setPrefWidth(240);
 
-        TableColumn<FileInfo, Long> fileSizeColumn = new TableColumn<>("Размер");
+        TableColumn<FileInfo, Long> fileSizeColumn = new TableColumn<>("Size");
+        fileSizeColumn.setSortable(false);
         fileSizeColumn.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().getSize()));
         fileSizeColumn.setCellFactory(column -> {
             return new TableCell<FileInfo, Long>() {
@@ -52,7 +53,7 @@ public class PanelController implements Initializable {
                     } else {
                         String text = String.format("%,d bytes", item);
                         if (item == -1L) {
-                            text = "[DIR]";
+                            text = "DIR";
                         }
                         setText(text);
                     }
@@ -61,12 +62,7 @@ public class PanelController implements Initializable {
         });
         fileSizeColumn.setPrefWidth(120);
 
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        TableColumn<FileInfo, String> fileDateColumn = new TableColumn<>("Дата изменения");
-        fileDateColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getLastModified().format(dtf)));
-        fileDateColumn.setPrefWidth(120);
-
-        filesTable.getColumns().addAll(fileTypeColumn, filenameColumn, fileSizeColumn, fileDateColumn);
+        filesTable.getColumns().addAll(fileTypeColumn, filenameColumn, fileSizeColumn);
         filesTable.getSortOrder().add(fileTypeColumn);
 
         disksBox.getItems().clear();
@@ -75,14 +71,11 @@ public class PanelController implements Initializable {
         }
         disksBox.getSelectionModel().select(0);
 
-        filesTable.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                if (event.getClickCount() == 2) {
-                    Path path = Paths.get(pathField.getText()).resolve(filesTable.getSelectionModel().getSelectedItem().getFilename());
-                    if (Files.isDirectory(path)) {
-                        updateList(path);
-                    }
+        filesTable.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                Path path = Paths.get(pathField.getText()).resolve(filesTable.getSelectionModel().getSelectedItem().getFilename());
+                if (Files.isDirectory(path)) {
+                    updateList(path);
                 }
             }
         });
@@ -94,10 +87,13 @@ public class PanelController implements Initializable {
         try {
             pathField.setText(path.normalize().toAbsolutePath().toString());
             filesTable.getItems().clear();
+            if (path.normalize().getNameCount() != 0) {
+                filesTable.getItems().add(new FileInfo());
+            }
             filesTable.getItems().addAll(Files.list(path).map(FileInfo::new).collect(Collectors.toList()));
             filesTable.sort();
         } catch (IOException e) {
-            Alert alert = new Alert(Alert.AlertType.WARNING, "По какой-то причине не удалось обновить список файлов", ButtonType.OK);
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Failed to update file list", ButtonType.OK);
             alert.showAndWait();
         }
     }
@@ -124,4 +120,12 @@ public class PanelController implements Initializable {
     public String getCurrentPath() {
         return pathField.getText();
     }
+
+    public void btnRootAction(ActionEvent actionEvent) {
+        Path root = Paths.get(pathField.getText()).getRoot();
+        if (root != null) {
+            updateList(root);
+        }
+    }
+
 }

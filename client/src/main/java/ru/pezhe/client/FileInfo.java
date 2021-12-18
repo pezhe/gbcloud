@@ -3,59 +3,33 @@ package ru.pezhe.client;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 public class FileInfo {
     public enum FileType {
         FILE("F"), DIRECTORY("D");
-
-        private String name;
-
+        private final String name;
         public String getName() {
             return name;
         }
-
         FileType(String name) {
             this.name = name;
         }
     }
 
-    private String filename;
-    private FileType type;
+    private final String filename;
+    private final FileType type;
     private long size;
-    private LocalDateTime lastModified;
 
     public String getFilename() {
         return filename;
-    }
-
-    public void setFilename(String filename) {
-        this.filename = filename;
     }
 
     public FileType getType() {
         return type;
     }
 
-    public void setType(FileType type) {
-        this.type = type;
-    }
-
     public long getSize() {
         return size;
-    }
-
-    public void setSize(long size) {
-        this.size = size;
-    }
-
-    public LocalDateTime getLastModified() {
-        return lastModified;
-    }
-
-    public void setLastModified(LocalDateTime lastModified) {
-        this.lastModified = lastModified;
     }
 
     public FileInfo(Path path) {
@@ -66,9 +40,14 @@ public class FileInfo {
             if (this.type == FileType.DIRECTORY) {
                 this.size = -1L;
             }
-            this.lastModified = LocalDateTime.ofInstant(Files.getLastModifiedTime(path).toInstant(), ZoneOffset.ofHours(3));
         } catch (IOException e) {
             throw new RuntimeException("Unable to create file info from path");
         }
+    }
+
+    public FileInfo() {
+        this.filename = "..";
+        this.size = -1L;
+        this.type = FileType.DIRECTORY;
     }
 }

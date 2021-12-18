@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="300.0" prefWidth="300.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.pezhe.client.AuthController">
+    <VBox spacing="5">
+        <Text fx:id="text" text="Hello world!" wrappingWidth="300" textAlignment="CENTER"/>
+        <HBox spacing="5">
+            <VBox>
+                <Text disable="true" text="Hostname/Address" />
+                <TextField fx:id="host" />
+            </VBox>
+            <VBox>
+                <Text disable="true" text="Port" />
+                <TextField fx:id="port" />
+            </VBox>
+        </HBox>
+        <Button fx:id="connectButton" alignment="center" maxWidth="Infinity" onAction="#connectBtnAction"
+                text="Connect" />
+        <Text disable="true" text="Login" />
+        <TextField fx:id="login" />
+        <Text disable="true" text="Password" />
+        <TextField fx:id="password" />
+        <HBox spacing="5">
+            <Button fx:id="loginButton" maxWidth="Infinity" onAction="#loginBtnAction" text="Login"
+            HBox.hgrow="ALWAYS" />
+            <Button fx:id="registerButton" maxWidth="Infinity" onAction="#registerBtnAction" text="Register"
+                    HBox.hgrow="ALWAYS" />
+        </HBox>
+        <Button maxWidth="Infinity" onAction="#quitBtnAction" text="Quit" />
+        <padding>
+            <Insets bottom="5" left="5" right="5" top="5" />
+        </padding>
+    </VBox>
+
+</AnchorPane>
