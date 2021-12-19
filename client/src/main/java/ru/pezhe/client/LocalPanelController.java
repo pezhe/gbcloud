@@ -3,11 +3,10 @@ package ru.pezhe.client;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
+import ru.pezhe.core.model.FileInfo;
 
 import java.io.IOException;
 import java.net.URL;
@@ -31,7 +30,7 @@ public class LocalPanelController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         TableColumn<FileInfo, String> fileTypeColumn = new TableColumn<>();
-        fileTypeColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getType().getName()));
+        fileTypeColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getType().toString()));
         fileTypeColumn.setVisible(false);
 
         TableColumn<FileInfo, String> filenameColumn = new TableColumn<>("Name");

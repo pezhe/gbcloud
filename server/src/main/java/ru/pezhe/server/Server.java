@@ -36,6 +36,7 @@ public class Server {
                         }
                     }).bind(8189).sync();
             log.debug("Server started...");
+            System.out.println("Server started...");
             future.channel().closeFuture().sync(); // block
         } catch (InterruptedException e) {
             log.error("e=", e);

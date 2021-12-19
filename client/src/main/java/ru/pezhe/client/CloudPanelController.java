@@ -1,32 +1,42 @@
 package ru.pezhe.client;
 
+import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import ru.pezhe.core.model.CommandType;
+import ru.pezhe.core.model.FileInfo;
+import ru.pezhe.core.model.Request;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 public class CloudPanelController implements Initializable {
+
     @FXML
     TableView<FileInfo> filesTable;
 
     @FXML
     TextField pathField;
 
+    private ObjectEncoderOutputStream os;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+
+        os = StreamHolder.getInstance().getOutputStream();
+
         TableColumn<FileInfo, String> fileTypeColumn = new TableColumn<>();
-        fileTypeColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getType().getName()));
+        fileTypeColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getType().toString()));
         fileTypeColumn.setVisible(false);
 
         TableColumn<FileInfo, String> filenameColumn = new TableColumn<>("Name");
@@ -62,14 +72,15 @@ public class CloudPanelController implements Initializable {
 
         filesTable.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
-                Path path = Paths.get(pathField.getText()).resolve(filesTable.getSelectionModel().getSelectedItem().getFilename());
-                if (Files.isDirectory(path)) {
-                    updateList(path);
+                FileInfo selection = filesTable.getSelectionModel().getSelectedItem();
+                if (selection.getType() == FileInfo.FileType.DIRECTORY) {
+                    requestUpdate(pathField.getText() + selection.getFilename());
                 }
             }
         });
 
-        updateList(Paths.get("."));
+        requestUpdate(".");
+
     }
 
     public void updateList(Path path) {
@@ -87,16 +98,26 @@ public class CloudPanelController implements Initializable {
         }
     }
 
+    private void requestUpdate(String folder) {
+        try {
+            os.writeObject(new Request(CommandType.LIST_REQUEST, folder));
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Failed to update file list", ButtonType.OK);
+            alert.showAndWait();
+        }
+    }
+
+    public void updateList(List<FileInfo> list) {
+        filesTable.getItems().clear();
+        filesTable.getItems().addAll(list);
+        filesTable.sort();
+    }
+
     public void btnPathUpAction(ActionEvent actionEvent) {
         Path upperPath = Paths.get(pathField.getText()).getParent();
         if (upperPath != null) {
             updateList(upperPath);
         }
-    }
-
-    public void selectDiskAction(ActionEvent actionEvent) {
-        ComboBox<String> element = (ComboBox<String>) actionEvent.getSource();
-        updateList(Paths.get(element.getSelectionModel().getSelectedItem()));
     }
 
     public String getSelectedFilename() {
@@ -108,6 +129,10 @@ public class CloudPanelController implements Initializable {
 
     public String getCurrentPath() {
         return pathField.getText();
+    }
+
+    public void setCurrentPath (String path) {
+        pathField.setText(path);
     }
 
     public void btnRootAction(ActionEvent actionEvent) {

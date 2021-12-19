@@ -6,12 +6,14 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+
 public class App extends Application {
     @Override
-    public void start(Stage primaryStage) throws Exception{
-        Parent root = FXMLLoader.load(getClass().getResource("main.fxml"));
+    public void start(Stage primaryStage) throws IOException {
+        Parent root = FXMLLoader.load(getClass().getResource("auth.fxml"));
         primaryStage.setTitle("GB Cloud");
-        primaryStage.setScene(new Scene(root, 750, 600));
+        primaryStage.setScene(new Scene(root));
         primaryStage.show();
     }
 

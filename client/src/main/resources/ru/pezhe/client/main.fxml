@@ -8,7 +8,7 @@
 <?import javafx.geometry.Insets?>
 
 <VBox spacing="5" alignment="center" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="ru.pezhe.client.Controller">
+      fx:controller="ru.pezhe.client.MainController">
 
     <HBox VBox.vgrow="ALWAYS">
         <fx:include fx:id="localPanel" source="localpanel.fxml" HBox.hgrow="ALWAYS" />
@@ -30,7 +30,8 @@
 
     <VBox spacing="5">
         <Text disable="true" text="  Console" />
-        <TextArea fx:id="messageField" disable="true" editable="false" minHeight="100.0" opacity="Infinity"
+        <TextArea fx:id="messageField" disable="true" editable="false" minHeight="100.0" maxHeight="100.0"
+                  opacity="Infinity"
                HBox.hgrow="ALWAYS" />
     </VBox>
     <padding>

@@ -1,5 +1,7 @@
 package ru.pezhe.client;
 
+import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
+import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -7,6 +9,10 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
+import ru.pezhe.core.model.AbstractMessage;
+import ru.pezhe.core.model.CommandType;
+import ru.pezhe.core.model.FileList;
+import ru.pezhe.core.model.Request;
 
 import java.io.IOException;
 import java.net.URL;
@@ -15,7 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ResourceBundle;
 
-public class Controller implements Initializable {
+public class MainController implements Initializable {
 
     @FXML
     TextArea messageField;
@@ -23,9 +29,41 @@ public class Controller implements Initializable {
     @FXML
     VBox localPanel, cloudPanel;
 
+    private ObjectEncoderOutputStream os;
+    private ObjectDecoderInputStream is;
+    private LocalPanelController localPanelController;
+    private CloudPanelController cloudPanelController;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         messageField.setText("Client started...\n");
+        localPanelController = (LocalPanelController) localPanel.getProperties().get("ctrl");
+        cloudPanelController = (CloudPanelController) cloudPanel.getProperties().get("ctrl");
+        is = StreamHolder.getInstance().getInputStream();
+        os = StreamHolder.getInstance().getOutputStream();
+        Thread t = new Thread(this::read);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void read() {
+        try {
+            while (true) {
+                AbstractMessage msg = (AbstractMessage) is.readObject();
+                switch (msg.getType()) {
+                    case FILE_LIST:
+                        FileList fileList = (FileList) msg;
+                        cloudPanelController.setCurrentPath(fileList.getCloudPath());
+                        cloudPanelController.updateList(fileList.getFiles());
+                        break;
+                    case FILE_TRANSFER:
+                        break;
+                    case RESPONSE:
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void copyBtnAction(ActionEvent actionEvent) {
@@ -74,4 +112,5 @@ public class Controller implements Initializable {
 
     public void deleteBtnAction(ActionEvent actionEvent) {
     }
+
 }

@@ -9,18 +9,18 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class FileMessage extends AbstractMessage {
+public class FileTransfer extends AbstractMessage {
 
     private String fileName;
     private byte[] bytes;
 
-    public FileMessage(Path path) throws IOException {
+    public FileTransfer(Path path) throws IOException {
         fileName = path.getFileName().toString();
         bytes = Files.readAllBytes(path);
     }
 
     @Override
     public CommandType getType() {
-        return CommandType.FILE_RESPONSE;
+        return CommandType.FILE_TRANSFER;
     }
 }

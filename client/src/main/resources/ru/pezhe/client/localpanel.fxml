@@ -20,7 +20,7 @@
 
     <TableView fx:id="filesTable" VBox.vgrow="ALWAYS"/>
 
-    <!--<properties>
+    <properties>
         <ctrl><fx:reference source="controller"/></ctrl>
-    </properties>-->
+    </properties>
 </VBox>

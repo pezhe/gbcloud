@@ -1,19 +1,13 @@
-package ru.pezhe.client;
+package ru.pezhe.core.model;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class FileInfo {
+
     public enum FileType {
-        FILE("F"), DIRECTORY("D");
-        private final String name;
-        public String getName() {
-            return name;
-        }
-        FileType(String name) {
-            this.name = name;
-        }
+        FILE, DIRECTORY
     }
 
     private final String filename;
