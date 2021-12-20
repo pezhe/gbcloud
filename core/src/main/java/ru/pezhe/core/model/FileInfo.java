@@ -1,10 +1,11 @@
 package ru.pezhe.core.model;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class FileInfo {
+public class FileInfo implements Serializable {
 
     public enum FileType {
         FILE, DIRECTORY
@@ -44,4 +45,9 @@ public class FileInfo {
         this.size = -1L;
         this.type = FileType.DIRECTORY;
     }
+
+    public boolean isDirectory() {
+        return type == FileType.DIRECTORY;
+    }
+
 }

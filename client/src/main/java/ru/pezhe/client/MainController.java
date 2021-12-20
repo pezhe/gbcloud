@@ -8,23 +8,22 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.VBox;
-import ru.pezhe.core.model.AbstractMessage;
-import ru.pezhe.core.model.CommandType;
-import ru.pezhe.core.model.FileList;
-import ru.pezhe.core.model.Request;
+import ru.pezhe.core.model.*;
 
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
 
     @FXML
-    TextArea messageField;
+    public TextArea console;
 
     @FXML
     VBox localPanel, cloudPanel;
@@ -36,7 +35,7 @@ public class MainController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        messageField.setText("Client started...\n");
+        console.setText("Session started...");
         localPanelController = (LocalPanelController) localPanel.getProperties().get("ctrl");
         cloudPanelController = (CloudPanelController) cloudPanel.getProperties().get("ctrl");
         is = StreamHolder.getInstance().getInputStream();
@@ -51,14 +50,32 @@ public class MainController implements Initializable {
             while (true) {
                 AbstractMessage msg = (AbstractMessage) is.readObject();
                 switch (msg.getType()) {
-                    case FILE_LIST:
+                    case FILE_LIST: {
                         FileList fileList = (FileList) msg;
                         cloudPanelController.setCurrentPath(fileList.getCloudPath());
                         cloudPanelController.updateList(fileList.getFiles());
                         break;
-                    case FILE_TRANSFER:
+                    }
+                    case FILE_TRANSFER: {
+                        System.out.println("received file");
+                        FileTransfer fileMsg = (FileTransfer) msg;
+                        Path result = Paths.get(localPanelController.getCurrentPath()).resolve(fileMsg.getFileName());
+                        if (Files.exists(result)) {
+                            console.appendText("\nFailed to download file " +
+                                    fileMsg.getFileName() + " because it already exists in destination directory");
+                        } else {
+                            Files.write(result, fileMsg.getBytes());
+                            localPanelController.updateList();
+                            console.appendText("\nFile " +
+                                    fileMsg.getFileName() + " successfully downloaded");
+                        }
                         break;
-                    case RESPONSE:
+                    }
+                    case RESPONSE: {
+                        Response response = (Response) msg;
+                        console.appendText("\n" + response.getMessage());
+                        break;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -66,51 +83,114 @@ public class MainController implements Initializable {
         }
     }
 
-    public void copyBtnAction(ActionEvent actionEvent) {
-        LocalPanelController leftPC = (LocalPanelController) localPanel.getProperties().get("ctrl");
-        LocalPanelController rightPC = (LocalPanelController) cloudPanel.getProperties().get("ctrl");
-
-        if (leftPC.getSelectedFilename() == null && rightPC.getSelectedFilename() == null) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "No file is selected", ButtonType.OK);
+    public void uploadFileBtnAction(ActionEvent actionEvent) {
+        FileInfo fileInfo = localPanelController.getSelectedItem();
+        if (fileInfo == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Select file for uploading", ButtonType.OK);
+            alert.setHeaderText(null);
             alert.showAndWait();
             return;
         }
-
-        LocalPanelController srcPC = null, dstPC = null;
-        if (leftPC.getSelectedFilename() != null) {
-            srcPC = leftPC;
-            dstPC = rightPC;
-        }
-        if (rightPC.getSelectedFilename() != null) {
-            srcPC = rightPC;
-            dstPC = leftPC;
-        }
-
-        Path srcPath = Paths.get(srcPC.getCurrentPath(), srcPC.getSelectedFilename());
-        Path dstPath = Paths.get(dstPC.getCurrentPath()).resolve(srcPath.getFileName().toString());
-
-        try {
-            Files.copy(srcPath, dstPath);
-            dstPC.updateList(Paths.get(dstPC.getCurrentPath()));
-        } catch (IOException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to copy file", ButtonType.OK);
+        if (cloudPanelController.contains(fileInfo.getFilename())) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "File already exists", ButtonType.OK);
+            alert.setHeaderText(null);
             alert.showAndWait();
+            return;
+        }
+        Path file = Paths.get(localPanelController.getCurrentPath()).resolve(fileInfo.getFilename());
+        if (!Files.isDirectory(file)) {
+            try {
+                os.writeObject(new FileTransfer(file));
+            } catch (IOException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to upload file", ButtonType.OK);
+                alert.setHeaderText(null);
+                alert.showAndWait();
+            }
+        } else {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "You can't upload directory", ButtonType.OK);
+            alert.setHeaderText(null);
+            alert.showAndWait();
+        }
+    }
+
+    public void downloadBtnAction(ActionEvent actionEvent) {
+        FileInfo fileInfo = cloudPanelController.getSelectedItem();
+        if (fileInfo == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Select file for downloading", ButtonType.OK);
+            alert.setHeaderText(null);
+            alert.showAndWait();
+            return;
+        }
+        if (localPanelController.contains(fileInfo.getFilename())) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "File already exists", ButtonType.OK);
+            alert.setHeaderText(null);
+            alert.showAndWait();
+            return;
+        }
+        if (!fileInfo.isDirectory()) {
+            try {
+                os.writeObject(new Request(CommandType.FILE_REQUEST, fileInfo.getFilename()));
+            } catch (IOException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to request file", ButtonType.OK);
+                alert.setHeaderText(null);
+                alert.showAndWait();
+            }
+        } else {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "You can't download directory", ButtonType.OK);
+            alert.setHeaderText(null);
+            alert.showAndWait();
+        }
+    }
+
+    public void createDirBtnAction(ActionEvent actionEvent) {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setHeaderText(null);
+        dialog.setContentText("Please enter directory name:");
+        dialog.setTitle("Make directory");
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()){
+            if (!cloudPanelController.contains(result.get())) {
+                try {
+                    os.writeObject(new Request(CommandType.MKDIR_REQUEST, result.get()));
+                } catch (IOException e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to send mkdir request", ButtonType.OK);
+                    alert.setHeaderText(null);
+                    alert.showAndWait();
+                }
+            } else {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Directory already exists", ButtonType.OK);
+                alert.setHeaderText(null);
+                alert.showAndWait();
+            }
+        }
+    }
+
+    public void deleteBtnAction(ActionEvent actionEvent) {
+        FileInfo fileInfo = cloudPanelController.getSelectedItem();
+        if (fileInfo == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Select file/directory to delete", ButtonType.OK);
+            alert.setHeaderText(null);
+            alert.showAndWait();
+            return;
+        }
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete file/directory");
+        alert.setHeaderText(null);
+        alert.setContentText("Are you sure you want to delete " + fileInfo.getFilename());
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.get() == ButtonType.OK){
+            try {
+                os.writeObject(new Request(CommandType.DEL_REQUEST, fileInfo.getFilename()));
+            } catch (IOException e) {
+                Alert alert1 = new Alert(Alert.AlertType.ERROR, "Failed to send delete request", ButtonType.OK);
+                alert1.setHeaderText(null);
+                alert1.showAndWait();
+            }
         }
     }
 
     public void setDefaultPathBtnAction(ActionEvent actionEvent) {
-    }
-
-    public void uploadFileBtnAction(ActionEvent actionEvent) {
-    }
-
-    public void downloadBtnAction(ActionEvent actionEvent) {
-    }
-
-    public void createDirBtnAction(ActionEvent actionEvent) {
-    }
-
-    public void deleteBtnAction(ActionEvent actionEvent) {
+        console.appendText("\nFeature is not available yet");
     }
 
 }

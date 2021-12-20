@@ -13,12 +13,8 @@ import ru.pezhe.core.model.Request;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 public class CloudPanelController implements Initializable {
 
@@ -74,7 +70,7 @@ public class CloudPanelController implements Initializable {
             if (event.getClickCount() == 2) {
                 FileInfo selection = filesTable.getSelectionModel().getSelectedItem();
                 if (selection.getType() == FileInfo.FileType.DIRECTORY) {
-                    requestUpdate(pathField.getText() + selection.getFilename());
+                    requestUpdate(selection.getFilename());
                 }
             }
         });
@@ -83,7 +79,7 @@ public class CloudPanelController implements Initializable {
 
     }
 
-    public void updateList(Path path) {
+    /*public void updateList(Path path) {
         try {
             pathField.setText(path.normalize().toAbsolutePath().toString());
             filesTable.getItems().clear();
@@ -96,7 +92,7 @@ public class CloudPanelController implements Initializable {
             Alert alert = new Alert(Alert.AlertType.WARNING, "Failed to update file list", ButtonType.OK);
             alert.showAndWait();
         }
-    }
+    }*/
 
     private void requestUpdate(String folder) {
         try {
@@ -114,17 +110,14 @@ public class CloudPanelController implements Initializable {
     }
 
     public void btnPathUpAction(ActionEvent actionEvent) {
-        Path upperPath = Paths.get(pathField.getText()).getParent();
-        if (upperPath != null) {
-            updateList(upperPath);
-        }
+        requestUpdate("..");
     }
 
-    public String getSelectedFilename() {
+    public FileInfo getSelectedItem() {
         if (!filesTable.isFocused()) {
             return null;
         }
-        return filesTable.getSelectionModel().getSelectedItem().getFilename();
+        return filesTable.getSelectionModel().getSelectedItem();
     }
 
     public String getCurrentPath() {
@@ -135,11 +128,12 @@ public class CloudPanelController implements Initializable {
         pathField.setText(path);
     }
 
+    public boolean contains(String fileName) {
+        return filesTable.getItems().stream().map(FileInfo::getFilename).anyMatch((s) -> s.equals(fileName));
+    }
+
     public void btnRootAction(ActionEvent actionEvent) {
-        Path root = Paths.get(pathField.getText()).getRoot();
-        if (root != null) {
-            updateList(root);
-        }
+        requestUpdate("\\");
     }
 
 }

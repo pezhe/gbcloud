@@ -10,9 +10,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class Server {
 
 
@@ -35,11 +33,10 @@ public class Server {
                             );
                         }
                     }).bind(8189).sync();
-            log.debug("Server started...");
             System.out.println("Server started...");
             future.channel().closeFuture().sync(); // block
         } catch (InterruptedException e) {
-            log.error("e=", e);
+            e.printStackTrace();
         } finally {
             auth.shutdownGracefully();
             worker.shutdownGracefully();

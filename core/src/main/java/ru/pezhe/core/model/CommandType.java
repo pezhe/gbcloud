@@ -7,5 +7,7 @@ public enum CommandType {
     FILE_LIST,
     AUTH_REQUEST,
     REG_REQUEST,
+    MKDIR_REQUEST,
+    DEL_REQUEST,
     RESPONSE
 }

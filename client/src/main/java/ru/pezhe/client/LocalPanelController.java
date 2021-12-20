@@ -79,7 +79,8 @@ public class LocalPanelController implements Initializable {
             }
         });
 
-        updateList(Paths.get("."));
+        String defaultPath = "D:\\temp\\"; //take if from ini file in future
+        updateList(Paths.get(defaultPath));
     }
 
     public void updateList(Path path) {
@@ -97,6 +98,10 @@ public class LocalPanelController implements Initializable {
         }
     }
 
+    public void updateList() {
+        updateList(Paths.get(pathField.getText()));
+    }
+
     public void btnPathUpAction(ActionEvent actionEvent) {
         Path upperPath = Paths.get(pathField.getText()).getParent();
         if (upperPath != null) {
@@ -109,15 +114,19 @@ public class LocalPanelController implements Initializable {
         updateList(Paths.get(element.getSelectionModel().getSelectedItem()));
     }
 
-    public String getSelectedFilename() {
+    public FileInfo getSelectedItem() {
         if (!filesTable.isFocused()) {
             return null;
         }
-        return filesTable.getSelectionModel().getSelectedItem().getFilename();
+        return filesTable.getSelectionModel().getSelectedItem();
     }
 
     public String getCurrentPath() {
         return pathField.getText();
+    }
+
+    public boolean contains(String fileName) {
+        return filesTable.getItems().stream().map(FileInfo::getFilename).anyMatch((s) -> s.equals(fileName));
     }
 
     public void btnRootAction(ActionEvent actionEvent) {
